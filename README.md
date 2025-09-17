@@ -8,3 +8,10 @@ Script per la creazione dell'infrastruttura per un cluster k8s, OpenShift (OKD) 
 - Script Ansible crea il cluster OKD
 - Script che prepara il cluster di database
 - Script che prepara il cluster ZMenu Next
+
+
+
+
+
+
+oc port-forward svc/postgres 5433:5432

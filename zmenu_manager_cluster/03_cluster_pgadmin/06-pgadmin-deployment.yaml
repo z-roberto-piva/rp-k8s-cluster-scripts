@@ -1,0 +1,68 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pgadmin
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: pgadmin
+  template:
+    metadata:
+      labels:
+        app: pgadmin
+    spec:
+      securityContext:
+        fsGroup: 26
+        fsGroupChangePolicy: "OnRootMismatch"
+      containers:
+        - name: pgadmin
+          image: registry.developers.crunchydata.com/crunchydata/crunchy-pgadmin4:ubi8-4.30-2534
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 5050
+              name: http
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+          env:
+            - name: PGADMIN_LISTEN_PORT
+              value: "5050"
+          envFrom:
+            - secretRef:
+                name: pgadmin-secret
+          volumeMounts:
+            - name: httpd-run
+              mountPath: /run/httpd
+            - name: pgadmin-data
+              mountPath: /var/lib/pgadmin
+            - name: servers
+              mountPath: /pgadmin4/servers.json
+              subPath: servers.json
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 40   # più tollerante in avvio
+            periodSeconds: 10
+            failureThreshold: 12
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 90
+            periodSeconds: 20
+            failureThreshold: 6
+      volumes:
+        - name: httpd-run
+          emptyDir: {}
+        - name: pgadmin-data
+          emptyDir: {}
+        - name: servers
+          configMap:
+            name: pgadmin-servers
+            optional: true

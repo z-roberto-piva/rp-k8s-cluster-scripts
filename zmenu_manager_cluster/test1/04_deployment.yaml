@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: zmenu-backend-staging-deployment
+  labels:
+    environment: staging
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: zmenu-backend-staging
+  template:
+    metadata:
+      labels:
+        app: zmenu-backend-staging
+        environment: staging
+    spec:
+      imagePullSecrets:
+        - name: ghcr-pull-secret
+      containers:
+        - name: app
+          image: ghcr.io/z-roberto-piva/zmenu_next_backoffice_backend:v0.0.2
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+              name: http
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+          env:
+            - name: ASPNETCORE_ENVIRONMENT
+              value: "Production"
+            - name: Authentication__JwtBearer__Authority
+              value: "https://staging.zidentity.cloud/"
+            - name: Authentication__JwtBearer__TokenEndpoint
+              value: "https://staging.zidentity.cloud/connect/token"
+            - name: ManagerSettings__Manager
+              value: "http://manager-svc:8080"   # <-- metti il Service/dns reale dell’altro pod

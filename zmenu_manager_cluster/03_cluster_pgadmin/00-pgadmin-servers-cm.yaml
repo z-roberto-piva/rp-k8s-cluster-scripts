@@ -1,0 +1,22 @@
+# pgadmin-servers-cm.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: pgadmin-servers
+  labels:
+    environment: staging
+data:
+  servers.json: |
+    {
+      "Servers": {
+        "1": {
+          "Name": "postgres",
+          "Group": "Servers",
+          "Port": 5432,
+          "Username": "zmenu",
+          "Host": "postgres",
+          "SSLMode": "prefer",
+          "MaintenanceDB": "zmenu"
+        }
+      }
+    }

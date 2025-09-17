@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: zmenu-backend-staging-svc
+  namespace: paas-zmenu-next
+spec:
+  selector:
+    app: zmenu-backend-staging
+  ports:
+    - name: http-ext
+      port: 5001          # Porta esposta dal Service
+      targetPort: 8080    # Porta del container prevista dall'immagine
+      protocol: TCP

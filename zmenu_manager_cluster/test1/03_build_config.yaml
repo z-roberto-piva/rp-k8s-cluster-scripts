@@ -1,0 +1,23 @@
+apiVersion: build.openshift.io/v1
+kind: BuildConfig
+metadata:
+  name: zmenu-backend-rewrap
+  namespace: paas-zmenu-next
+spec:
+  source:
+    type: Dockerfile
+    dockerfile: |
+      FROM ghcr.io/z-roberto-piva/zmenu_next_backoffice_backend:v0.0.2
+  strategy:
+    type: Docker
+    dockerStrategy:
+      pullSecret:
+        name: ghcr-pull-secret
+  output:
+    to:
+      kind: ImageStreamTag
+      name: zmenu-backend:latest
+  triggers:
+    - type: ConfigChange
+    - type: ImageChange
+  runPolicy: Serial

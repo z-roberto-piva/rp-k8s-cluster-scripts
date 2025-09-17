@@ -1,0 +1,49 @@
+# manager-be-deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: manager-be
+  labels:
+    environment: staging   
+spec:
+  replicas: 1
+  selector: { matchLabels: { app: manager-be } }
+  template:
+    metadata:
+      labels:
+        environment: staging 
+        app: manager-be
+    spec:
+      imagePullSecrets:
+        - name: ghcr-creds
+      containers:
+        - name: manager-be
+          image: ghcr.io/z-roberto-piva/zmenu_next_manager_backend:v0.0.2
+          ports:
+            - containerPort: 8080
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+          env:
+            - name: ASPNETCORE_ENVIRONMENT
+              value: Production
+            # Accesso a Postgres
+            - name: DatabaseSettings__DatabaseHost
+              value: postgres
+            - name: DatabaseSettings__DatabasePort
+              value: "5432"
+          volumeMounts:
+            - name: backend-config
+              mountPath: /secrets
+              readOnly: true
+      volumes:
+        - name: backend-config
+          secret:
+            secretName: backend-config-secret
+            items:
+              - key: secret.json
+                path: secret.json

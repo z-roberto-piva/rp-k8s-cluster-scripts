@@ -1,0 +1,36 @@
+# frontend-deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+  labels:
+    environment: staging 
+spec:
+  replicas: 1
+  selector: { matchLabels: { app: frontend } }
+  template:
+    metadata:
+      labels: 
+        environment: staging
+        app: frontend
+    spec:
+      imagePullSecrets:
+        - name: ghcr-creds
+      containers:
+        - name: frontend
+          image: ghcr.io/z-roberto-piva/zmenu_next_backoffice_frontend:v0.0.2
+          ports:
+            - containerPort: 80
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+          env:
+            - name: API_PROXY_TARGET
+              value: http://backend:8080
+          # Se il FE legge l'URL API da env, imposta la var corretta per puntare alla Route del backend:
+          # - name: VITE_API_BASE
+          #   value: "https://<host-route-backend>"

@@ -1,0 +1,9 @@
+apiVersion: image.openshift.io/v1
+kind: ImageStream
+metadata:
+  name: zmenu-backend
+  namespace: paas-zmenu-next
+spec:
+  lookupPolicy:
+    local: true
+---
