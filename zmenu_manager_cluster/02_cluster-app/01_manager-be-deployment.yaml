@@ -7,7 +7,9 @@ metadata:
     environment: staging   
 spec:
   replicas: 1
-  selector: { matchLabels: { app: manager-be } }
+  selector:
+    matchLabels:
+      app: manager-be
   template:
     metadata:
       labels:

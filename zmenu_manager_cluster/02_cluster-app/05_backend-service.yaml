@@ -6,7 +6,8 @@ metadata:
   labels:
     environment: staging 
 spec:
-  selector: { app: backend }
+  selector:
+    app: backend
   ports:
     - name: http
       port: 8080

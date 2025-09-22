@@ -7,7 +7,9 @@ metadata:
     environment: staging 
 spec:
   replicas: 1
-  selector: { matchLabels: { app: manager-fe } }
+  selector:
+    matchLabels:
+      app: manager-fe
   template:
     metadata:
       labels: 
@@ -18,7 +20,7 @@ spec:
         - name: ghcr-creds
       containers:
         - name: manager-fe
-          image: ghcr.io/z-roberto-piva/zmenu_next_manager_frontend:v0.0.2
+          image: ghcr.io/z-roberto-piva/zmenu_next_manager_frontend:v0.0.3
           ports:
             - containerPort: 80
           resources:
@@ -31,6 +33,29 @@ spec:
           env:
             - name: API_PROXY_TARGET
               value: http://manager-be:8080
-          # Se il FE legge l'URL API da env (build/runtime), aggiungi la var corretta
-          # - name: VITE_API_BASE
-          #   value: "https://<host-route-manager-be>"  # oppure Path-based via lo stesso host del FE
+          volumeMounts:
+            - name: nginx-conf
+              mountPath: /etc/nginx/nginx.conf
+              subPath: nginx_manager.conf   # monta solo il file
+            - name: tmp
+              mountPath: /tmp
+          # Se vuoi health checks:
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 8080
+            initialDelaySeconds: 15
+            periodSeconds: 20
+      volumes:
+        - name: nginx-conf
+          configMap:
+            name: manager-fe-nginx-conf
+        - name: tmp
+          emptyDir: {}
+

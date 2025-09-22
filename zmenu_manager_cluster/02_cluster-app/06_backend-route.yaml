@@ -6,7 +6,10 @@ metadata:
   labels:
     environment: staging   
 spec:
-  to: { kind: Service, name: backend }
-  port: { targetPort: http }
+  to: 
+    kind: Service
+    name: backend
+  port:
+    targetPort: http
   tls:
     termination: edge

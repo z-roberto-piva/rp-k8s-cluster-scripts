@@ -6,8 +6,10 @@ metadata:
   labels:
     environment: staging 
 spec:
-  selector: { app: frontend }
+  selector:
+    app: frontend
   ports:
     - name: http
       port: 80
-      targetPort: 80
+      targetPort: 8080
+      protocol: TCP

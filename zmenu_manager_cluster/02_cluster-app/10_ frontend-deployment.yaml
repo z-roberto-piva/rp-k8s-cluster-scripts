@@ -7,7 +7,9 @@ metadata:
     environment: staging 
 spec:
   replicas: 1
-  selector: { matchLabels: { app: frontend } }
+  selector: 
+    matchLabels: 
+      app: frontend
   template:
     metadata:
       labels: 
@@ -18,9 +20,9 @@ spec:
         - name: ghcr-creds
       containers:
         - name: frontend
-          image: ghcr.io/z-roberto-piva/zmenu_next_backoffice_frontend:v0.0.2
+          image: ghcr.io/z-roberto-piva/zmenu_next_backoffice_frontend:v0.0.5
           ports:
-            - containerPort: 80
+            - containerPort: 8080
           resources:
             requests:
               cpu: "100m"
@@ -31,6 +33,28 @@ spec:
           env:
             - name: API_PROXY_TARGET
               value: http://backend:8080
-          # Se il FE legge l'URL API da env, imposta la var corretta per puntare alla Route del backend:
-          # - name: VITE_API_BASE
-          #   value: "https://<host-route-backend>"
+          volumeMounts:
+            - name: nginx-conf
+              mountPath: /etc/nginx/nginx.conf
+              subPath: nginx_fe.conf   # monta solo il file
+            - name: tmp
+              mountPath: /tmp
+          # Se vuoi health checks:
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 8080
+            initialDelaySeconds: 15
+            periodSeconds: 20
+      volumes:
+        - name: nginx-conf
+          configMap:
+            name: fe-nginx-conf
+        - name: tmp
+          emptyDir: {}

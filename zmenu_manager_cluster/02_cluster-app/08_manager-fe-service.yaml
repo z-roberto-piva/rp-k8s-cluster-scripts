@@ -6,7 +6,8 @@ metadata:
   labels:
     environment: staging 
 spec:
-  selector: { app: manager-fe }
+  selector: 
+    app: manager-fe
   ports:
     - name: http
       port: 80
