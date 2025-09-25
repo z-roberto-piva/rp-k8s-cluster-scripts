@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: pg-secret
+  namespace: postgres-local
+type: Opaque
+stringData:
+  POSTGRES_DATABASE: zmenu
+  POSTGRES_USER: zmenu
+  POSTGRES_PASSWORD: sviluppo  # cambia!

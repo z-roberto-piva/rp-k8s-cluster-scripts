@@ -19,3 +19,9 @@ oc create configmap fe-nginx-conf --from-file=nginx_conf\nginx_fe.conf
 ### Per FE Manager
 
 oc create configmap namager-fe-nginx-conf --from-file=nginx_conf\nginx_managerfe.conf
+
+### Per connettersi al db
+
+Si crea un link al servizio in locale e si accede in localhost sulla porta opportuna.
+
+oc port-forward svc/postgres 5433:5432
