@@ -4,19 +4,19 @@ kind: ConfigMap
 metadata:
   name: pgadmin-servers
   labels:
-    environment: staging
+    app: pgadmin
 data:
   servers.json: |
     {
       "Servers": {
         "1": {
-          "Name": "postgres",
-          "Group": "Servers",
+          "Name": "PostgreSQL",
+          "Group": "Predefiniti",
+          "Host": "postgres.svc.cluster.local",
           "Port": 5432,
-          "Username": "zmenu",
-          "Host": "postgres",
-          "SSLMode": "prefer",
-          "MaintenanceDB": "zmenu"
+          "MaintenanceDB": "postgres",
+          "Username": "postgres",
+          "SSLMode": "prefer"
         }
       }
     }

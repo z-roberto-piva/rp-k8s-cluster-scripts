@@ -2,6 +2,8 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: pgadmin
+  labels:
+    app: pgadmin
 spec:
   replicas: 1
   selector:
@@ -12,57 +14,87 @@ spec:
       labels:
         app: pgadmin
     spec:
+      # Compatibile con PodSecurity/SCC "restricted"
       securityContext:
-        fsGroup: 26
-        fsGroupChangePolicy: "OnRootMismatch"
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: pgadmin
-          image: registry.developers.crunchydata.com/crunchydata/crunchy-pgadmin4:ubi8-4.30-2534
+          # Immagine UBI friendly per OpenShift (consigliata)
+          image: registry.developers.crunchydata.com/crunchydata/crunchy-pgadmin4:ubi9-9.2-2534
           imagePullPolicy: IfNotPresent
+          env:
+            - name: PGADMIN_DEFAULT_EMAIL
+              valueFrom:
+                secretKeyRef:
+                  name: pgadmin-secret
+                  key: PGADMIN_DEFAULT_EMAIL
+            - name: PGADMIN_DEFAULT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: pgadmin-secret
+                  key: PGADMIN_DEFAULT_PASSWORD
+            - name: PGADMIN_CONFIG_CONSOLE_LOG_LEVEL
+              value: '10'
+            - name: PGADMIN_DISABLE_POSTFIX
+              value: '1'
+            # - name: PGADMIN_LISTEN_PORT
+            #   value: "5050"
+            # Se monti la ConfigMap dei server
+            # - name: PGADMIN_SERVER_JSON_FILE
+            #   value: "/pgadmin4/servers.json"
           ports:
-            - containerPort: 5050
-              name: http
+            - name: http
+              containerPort: 5050
+          readinessProbe:
+            httpGet: { path: "/", port: http }
+          livenessProbe:
+            httpGet: { path: "/", port: http }
           resources:
             requests:
-              cpu: "100m"
-              memory: "128Mi"
-            limits:
-              cpu: "500m"
+              cpu: "250m"
               memory: "512Mi"
-          env:
-            - name: PGADMIN_LISTEN_PORT
-              value: "5050"
-          envFrom:
-            - secretRef:
-                name: pgadmin-secret
+            limits:
+              cpu: "1"
+              memory: "1Gi"
           volumeMounts:
-            - name: httpd-run
+            - name: data
+              mountPath: /var/lib/pgadmin      # Dati/sessions (EFFIMERI)
+            - name: logs
+              mountPath: /var/log/pgadmin      # Log (EFFIMERI)
+            - name: run-httpd
               mountPath: /run/httpd
-            - name: pgadmin-data
-              mountPath: /var/lib/pgadmin
-            - name: servers
-              mountPath: /pgadmin4/servers.json
-              subPath: servers.json
-          readinessProbe:
-            httpGet:
-              path: /
-              port: http
-            initialDelaySeconds: 40   # più tollerante in avvio
-            periodSeconds: 10
-            failureThreshold: 12
-          livenessProbe:
-            httpGet:
-              path: /
-              port: http
-            initialDelaySeconds: 90
-            periodSeconds: 20
-            failureThreshold: 6
+            # - name: servers
+            #   mountPath: /pgadmin4/servers.json
+            #   subPath: servers.json
+            #   readOnly: true
+          # readinessProbe:
+          #   httpGet:
+          #     path: /
+          #     port: http
+          #   initialDelaySeconds: 10
+          #   periodSeconds: 10
+          # livenessProbe:
+            # httpGet:
+            #   path: /
+            #   port: http
+            # initialDelaySeconds: 30
+            # periodSeconds: 20
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: false
+            # capabilities:
+            #   drop: ["ALL"]
       volumes:
-        - name: httpd-run
+        - name: data
+          emptyDir: {}         # <— Niente PVC: storage effimero su nodo
+        - name: logs
           emptyDir: {}
-        - name: pgadmin-data
+        - name: run-httpd
           emptyDir: {}
-        - name: servers
-          configMap:
-            name: pgadmin-servers
-            optional: true
+        # - name: servers
+        #   configMap:
+        #     name: pgadmin-servers
+            # Se non vuoi pre-caricare server, puoi commentare tutta questa volumeSource
+

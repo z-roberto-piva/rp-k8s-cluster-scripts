@@ -1,0 +1,183 @@
+# ---------------------------------------------------------------------------
+# 1. Secret per la password di login di pgAdmin
+#    La password deve essere codificata in Base64.
+#    Esegui questo comando per generare la tua:
+#    echo -n 'LaTuaPasswordSuperSegreta' | base64
+# ---------------------------------------------------------------------------
+apiVersion: v1
+kind: Secret
+metadata:
+  name: pgadmin-secret
+type: Opaque
+data:
+  # Sostituisci questo valore con la tua password codificata in Base64
+  pgadmin-password: TGFUdWFQYXNzd29yZFN1cGVyU2VncmV0YQ==
+
+---
+# ---------------------------------------------------------------------------
+# 2. ConfigMap per le impostazioni di base di pgAdmin
+# ---------------------------------------------------------------------------
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: pgadmin-config
+data:
+  # Email che userai per fare il login
+  PGADMIN_DEFAULT_EMAIL: "admin@esempio.com"
+
+---
+# ---------------------------------------------------------------------------
+# 3. ConfigMap per la lista dei server PostgreSQL
+#    Questo file servers.json verrà montato nel container per pre-configurare
+#    le connessioni ai database.
+# ---------------------------------------------------------------------------
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: pgadmin-servers-config
+data:
+  servers.json: |
+    {
+      "Servers": {
+        "1": {
+          "Name": "Produzione DB",
+          "Group": "Server Produzione",
+          "Host": "host-db-produzione.tuo-dominio.com",
+          "Port": 5432,
+          "MaintenanceDB": "postgres",
+          "Username": "utente_db_prod",
+          "SSLMode": "prefer"
+        },
+        "2": {
+          "Name": "Sviluppo DB",
+          "Group": "Server Sviluppo",
+          "Host": "host-db-sviluppo",
+          "Port": 5432,
+          "MaintenanceDB": "postgres",
+          "Username": "utente_db_dev",
+          "SSLMode": "prefer"
+        }
+      }
+    }
+
+---
+# ---------------------------------------------------------------------------
+# 4. Deployment di pgAdmin
+#    Utilizza un volume 'emptyDir' che è temporaneo e vive solo
+#    con il Pod.
+# ---------------------------------------------------------------------------
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pgadmin
+  labels:
+    app: pgadmin
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: pgadmin
+  template:
+    metadata:
+      labels:
+        app: pgadmin
+    spec:
+      securityContext:
+        # fsGroup: 1001
+        # runAsUser: 1001
+        allowPrivilegeEscalation: false
+        capabilities: 
+          drop: ["ALL"]
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: pgadmin
+          # image: dpage/pgadmin4:latest
+          image: registry.developers.crunchydata.com/crunchydata/crunchy-pgadmin4:ubi9-9.2-2534
+          ports:
+            - containerPort: 5050
+              protocol: TCP
+          env:
+            # Carica l'email dalla ConfigMap
+            - name: PGADMIN_DEFAULT_EMAIL
+              valueFrom:
+                configMapKeyRef:
+                  name: pgadmin-config
+                  key: PGADMIN_DEFAULT_EMAIL
+            # Carica la password dal Secret
+            - name: PGADMIN_DEFAULT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: pgadmin-secret
+                  key: pgadmin-password
+            # Dice a pgAdmin di non salvare le password (più sicuro)
+            - name: PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED
+              value: "False"
+          
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "512Mi"
+            limits:
+              cpu: "1"
+              memory: "1Gi"
+
+          volumeMounts:
+            # Mount del file servers.json in sola lettura
+            - name: pgadmin-servers
+              mountPath: /pgadmin4/servers.json
+              subPath: servers.json
+              readOnly: true
+            # Mount del volume temporaneo per i dati di runtime
+            - name: pgadmin-data
+              mountPath: /var/lib/pgadmin
+      volumes:
+        # Volume che prende i dati dalla ConfigMap dei server
+        - name: pgadmin-servers
+          configMap:
+            name: pgadmin-servers-config
+        # Volume temporaneo che verrà cancellato se il Pod muore
+        - name: pgadmin-data
+          emptyDir: {}
+
+---
+# ---------------------------------------------------------------------------
+# 5. Service per esporre il Deployment all'interno del cluster
+# ---------------------------------------------------------------------------
+apiVersion: v1
+kind: Service
+metadata:
+  name: pgadmin-service
+  labels:
+    app: pgadmin
+spec:
+  ports:
+    - name: http
+      port: 80
+      protocol: TCP
+      targetPort: 5050
+  selector:
+    app: pgadmin
+  type: ClusterIP
+
+---
+# ---------------------------------------------------------------------------
+# 6. Route per esporre pgAdmin all'esterno del cluster OpenShift
+# ---------------------------------------------------------------------------
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: pgadmin-route
+  labels:
+    app: pgadmin
+spec:
+  to:
+    kind: Service
+    name: pgadmin-service
+    weight: 100
+  port:
+    targetPort: http
+  tls:
+    termination: edge
+    insecureEdgeTerminationPolicy: Redirect

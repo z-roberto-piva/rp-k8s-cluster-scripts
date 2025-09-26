@@ -1,7 +1,10 @@
+# 5) Route per accesso esterno
 apiVersion: route.openshift.io/v1
 kind: Route
 metadata:
   name: pgadmin
+  labels:
+    app: pgadmin
 spec:
   to:
     kind: Service

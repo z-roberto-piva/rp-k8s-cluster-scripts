@@ -1,14 +1,14 @@
-# pgadmin-service.yaml
+# 4) Service
 apiVersion: v1
 kind: Service
 metadata:
   name: pgadmin
   labels:
-    environment: staging 
+    app: pgadmin
 spec:
   selector:
     app: pgadmin
   ports:
     - name: http
       port: 5050
-      targetPort: http
+      targetPort: 5050
