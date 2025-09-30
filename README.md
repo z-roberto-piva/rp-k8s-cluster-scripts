@@ -15,3 +15,5 @@ Script per la creazione dell'infrastruttura per un cluster k8s, OpenShift (OKD) 
 
 
 oc port-forward svc/postgres 5433:5432
+
+
