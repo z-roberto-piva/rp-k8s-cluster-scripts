@@ -1,0 +1,59 @@
+flowchart LR
+  subgraph "ZMenu Next Cluster"
+    
+    zmenu_next_manager_frontend(Pod manager-fe)
+    zmenu_next_manager_backend(Pod manager-be)
+
+    zmenu_next_backoffice_frontend(Pod frontend)
+    zmenu_next_backoffice_backend(Pod backend)
+
+    
+    deployment_zmenu_next_manager_frontend[Deployment manager-fe]
+    deployment_zmenu_next_manager_backend[Deployment manager-be]
+
+    deployment_zmenu_next_backoffice_frontend[Deployment frontend]
+    deployment_zmenu_next_backoffice_backend[Deployment backend]
+
+    
+    service_zmenu_next_manager_frontend(Service manager-fe)
+    service_zmenu_next_manager_backend(Service manager-be)
+    
+    service_zmenu_next_backoffice_frontend(Service frontend)
+    service_zmenu_next_backoffice_backend(Service backend)
+
+    
+    route_zmenu_next_manager_frontend(Route manager-fe)
+    route_zmenu_next_manager_backend(Route manager-be)
+    
+    route_zmenu_next_backoffice_frontend(Route frontend)
+    route_zmenu_next_backoffice_backend(Route backend)
+
+    routezmenu_next_frontend_ext[Route frontend-ext]
+    routezmenu_next_frontend_manager_ext[Route frontend-manager-ext]
+  end
+  subgraph "Postgres Swarm"
+    manager_db[(PostgreSQL Manager DB)]
+    tenant_1_db[(PostgreSQL Backoffice Tenant 1 DB)]
+    tenant_2_db[(PostgreSQL Backoffice Tenant 2 DB)]
+    tenant_3_db[(PostgreSQL Backoffice Tenant 3 DB)]
+    tenant_4_db[(PostgreSQL Backoffice Tenant 4 DB)]
+    tenant_n_db[(PostgreSQL Backoffice Tenant n DB)]
+  end
+route_zmenu_next_manager_frontend --> service_zmenu_next_manager_frontend --> deployment_zmenu_next_manager_frontend --> zmenu_next_manager_frontend --> service_zmenu_next_manager_backend
+routezmenu_next_frontend_manager_ext --> service_zmenu_next_manager_frontend
+
+route_zmenu_next_backoffice_frontend --> service_zmenu_next_backoffice_frontend --> deployment_zmenu_next_backoffice_frontend --> zmenu_next_backoffice_frontend --> service_zmenu_next_backoffice_backend
+routezmenu_next_frontend_ext --> service_zmenu_next_backoffice_frontend
+
+route_zmenu_next_manager_backend --> service_zmenu_next_manager_backend --> deployment_zmenu_next_manager_backend --> zmenu_next_manager_backend --> manager_db
+
+route_zmenu_next_backoffice_backend --> service_zmenu_next_backoffice_backend --> deployment_zmenu_next_backoffice_backend --> zmenu_next_backoffice_backend
+
+zmenu_next_backoffice_backend --> service_zmenu_next_manager_backend
+
+zmenu_next_backoffice_backend --> tenant_1_db
+zmenu_next_backoffice_backend --> tenant_2_db
+zmenu_next_backoffice_backend --> tenant_3_db
+zmenu_next_backoffice_backend --> tenant_4_db
+zmenu_next_backoffice_backend --> tenant_n_db
+             
