@@ -1,0 +1,21 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: zmenu-next-frontend
+  labels:
+    app: zmenu-next-frontend
+    environment: staging
+    type: external
+spec:
+  ingressClassName: openshift-default
+  rules:
+    - host: zmenu-next-frontend.apps-ext.a5ocpsharecl1.zucchetti.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: frontend
+                port:
+                  name: http

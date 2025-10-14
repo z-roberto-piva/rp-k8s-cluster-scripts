@@ -4,7 +4,8 @@ kind: Route
 metadata:
   name: frontend
   labels:
-    environment: staging 
+    environment: staging
+    type: external
 spec:
   to:  
     kind: Service

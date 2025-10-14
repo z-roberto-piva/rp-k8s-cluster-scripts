@@ -5,6 +5,7 @@ metadata:
   namespace: paas-zmenu-next
   labels:
     environment: staging
+    type: external
 spec:
   host: next-app.zhospitality.online
   to:
