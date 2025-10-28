@@ -1,0 +1,30 @@
+apiVersion: tekton.dev/v1beta1
+kind: PipelineRun
+metadata:
+  generateName: zmenu-fe-staging-run-
+spec:
+  pipelineRef:
+    name: zmenu-fe-build-with-submodules
+  serviceAccountName: zmenu-frontend-serviceaccount
+  params:
+    - name: repo-url
+      value: "https://ZMenuNext@dev.azure.com/ZMenuNext/Zmenu%20Backoffice/_git/ZMenuNext_FrontEnd"
+    - name: revision
+      value: Develop                # <— branch staging
+    - name: image-registry
+      value: container-registry.zucchetti.com/zucchetti_hospitality/zmenu_next
+    - name: image-name
+      value: backoffice_frontend
+    - name: tag
+      value: staging                # <— tag immagine per staging
+    - name: dockerfile
+      value: ./Dockerfile
+    - name: context
+      value: .
+    - name: tls-verify
+      value: "true"
+  workspaces:
+    - name: source
+      emptyDir: {}                  # evita errori legati a PVC/StorageClass
+    - name: varlibcontainers
+      emptyDir: {}

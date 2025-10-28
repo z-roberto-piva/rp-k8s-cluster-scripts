@@ -7,7 +7,7 @@ spec:
   source:
     type: Dockerfile
     dockerfile: |
-      FROM ghcr.io/z-roberto-piva/zmenu_next_backoffice_backend:v0.0.2
+      FROM container-registry.zucchetti.com/zucchetti_hospitality/zmenu_next/backoffice_backend:v0.0.2
   strategy:
     type: Docker
     dockerStrategy:

@@ -1,0 +1,20 @@
+kind: Route
+apiVersion: route.openshift.io/v1
+metadata:
+  name: zmenu-next-frontend-https
+  labels:
+    app: zmenu-next-frontend
+    environment: staging
+    type: external
+spec:
+  host: zmenu-next-frontend.apps-ext.a5ocpsharecl1.zucchetti.com
+  to:
+    kind: Service
+    name: frontend
+    weight: 100
+  port:
+    targetPort: http
+  tls:
+    termination: edge
+    insecureEdgeTerminationPolicy: Allow
+  wildcardPolicy: None

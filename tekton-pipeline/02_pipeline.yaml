@@ -1,0 +1,75 @@
+apiVersion: tekton.dev/v1beta1
+kind: Pipeline
+metadata:
+  name: zmenu-fe-build-with-submodules
+spec:
+  description: Clona repo ADO via HTTPS con submodules e builda/pusha l'immagine frontend.
+  params:
+    - name: repo-url
+      type: string
+    - name: revision
+      type: string
+      default: main
+    - name: image-registry
+      type: string
+      default: container-registry.zucchetti.com/zucchetti_hospitality/zmenu_next
+    - name: image-name
+      type: string
+      default: backoffice_frontend
+    - name: tag
+      type: string
+      default: latest
+    - name: dockerfile
+      type: string
+      default: ./Dockerfile
+    - name: context
+      type: string
+      default: .
+    - name: tls-verify
+      type: string
+      default: "true"
+  workspaces:
+    - name: source
+    - name: varlibcontainers
+
+  tasks:
+    - name: fetch-source
+      taskRef:
+        kind: ClusterTask
+        name: git-clone
+      workspaces:
+        - name: output
+          workspace: source
+      params:
+        - name: url
+          value: $(params.repo-url)
+        - name: revision
+          value: $(params.revision)
+        - name: submodules
+          value: "true"
+        - name: depth
+          value: "1"
+        - name: deleteExisting
+          value: "true"
+
+    - name: build-and-push
+      runAfter: [fetch-source]
+      taskRef:
+        kind: ClusterTask
+        name: buildah
+      workspaces:
+        - name: source
+          workspace: source
+        - name: varlibcontainers
+          workspace: varlibcontainers
+      params:
+        - name: IMAGE
+          value: $(params.image-registry)/$(params.image-name):$(params.tag)
+        - name: DOCKERFILE
+          value: $(params.dockerfile)
+        - name: CONTEXT
+          value: $(params.context)
+        - name: TLSVERIFY
+          value: $(params.tls-verify)
+        - name: SKIP_PUSH
+          value: "false"

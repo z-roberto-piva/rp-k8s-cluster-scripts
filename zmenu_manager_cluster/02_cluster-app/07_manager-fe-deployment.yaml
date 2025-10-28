@@ -20,7 +20,7 @@ spec:
         - name: ghcr-creds
       containers:
         - name: manager-fe
-          image: ghcr.io/z-roberto-piva/zmenu_next_manager_frontend:0.0.3-1
+          image: container-registry.zucchetti.com/zucchetti_hospitality/zmenu_next/manager_frontend:0.0.3-1
           ports:
             - containerPort: 80
           resources:
