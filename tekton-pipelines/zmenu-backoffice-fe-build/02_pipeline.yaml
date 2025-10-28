@@ -1,45 +1,35 @@
 apiVersion: tekton.dev/v1beta1
 kind: Pipeline
 metadata:
-  name: zmenu-fe-build-with-submodules
+  name: zmenu-backoffice-fe-build-with-submodules
 spec:
-  description: Clona repo ADO via HTTPS con submodules e builda/pusha l'immagine frontend.
   params:
-    - name: repo-url
+    - default: 'https://dev.azure.com/ZMenuNext/Zmenu%20Backoffice/_git/ZMenuNext_FrontEnd'
+      name: repo-url
       type: string
-    - name: revision
+    - default: Develop
+      name: revision
       type: string
-      default: main
-    - name: image-registry
+    - default: container-registry.zucchetti.com/zucchetti_hospitality/zmenu_next
+      name: image-registry
       type: string
-      default: container-registry.zucchetti.com/zucchetti_hospitality/zmenu_next
-    - name: image-name
+    - default: backoffice_frontend
+      name: image-name
       type: string
-      default: backoffice_frontend
-    - name: tag
+    - default: latest
+      name: tag
       type: string
-      default: latest
-    - name: dockerfile
+    - default: ./Dockerfile
+      name: dockerfile
       type: string
-      default: ./Dockerfile
-    - name: context
+    - default: .
+      name: context
       type: string
-      default: .
-    - name: tls-verify
+    - default: 'true'
+      name: tls-verify
       type: string
-      default: "true"
-  workspaces:
-    - name: source
-    - name: varlibcontainers
-
   tasks:
     - name: fetch-source
-      taskRef:
-        kind: ClusterTask
-        name: git-clone
-      workspaces:
-        - name: output
-          workspace: source
       params:
         - name: url
           value: $(params.repo-url)
@@ -51,17 +41,15 @@ spec:
           value: "1"
         - name: deleteExisting
           value: "true"
-
-    - name: build-and-push
-      runAfter: [fetch-source]
       taskRef:
         kind: ClusterTask
-        name: buildah
+        name: git-clone
       workspaces:
-        - name: source
+        - name: output
           workspace: source
-        - name: varlibcontainers
-          workspace: varlibcontainers
+        - name: basic-auth
+          workspace: GitCredentials
+    - name: build-and-push
       params:
         - name: IMAGE
           value: $(params.image-registry)/$(params.image-name):$(params.tag)
@@ -73,3 +61,15 @@ spec:
           value: $(params.tls-verify)
         - name: SKIP_PUSH
           value: "false"
+      runAfter:
+        - fetch-source
+      taskRef:
+        kind: ClusterTask
+        name: buildah
+      workspaces:
+        - name: source
+          workspace: source
+  workspaces:
+    - name: source
+    - name: GitCredentials
+
