@@ -1,0 +1,78 @@
+apiVersion: tekton.dev/v1beta1
+kind: Pipeline
+metadata:
+  name: zmenu-backoffice-fe-build
+spec:
+  params:
+    - default: 'https://dev.azure.com/ZMenuNext/Zmenu%20Backoffice/_git/ZMenuNext_FrontEnd'
+      name: repo-url
+      type: string
+    - default: Develop
+      name: revision
+      type: string
+    - default: container-registry.zucchetti.com/zucchetti_hospitality/zmenu_next
+      name: image-registry
+      type: string
+    - default: backoffice_frontend
+      name: image-name
+      type: string
+    - default: latest
+      name: tag
+      type: string
+    - default: ./Dockerfile
+      name: dockerfile
+      type: string
+    - default: .
+      name: context
+      type: string
+    - default: 'true'
+      name: tls-verify
+      type: string
+  tasks:
+    - name: fetch-source
+      params:
+        - name: url
+          value: $(params.repo-url)
+        - name: revision
+          value: $(params.revision)
+        - name: submodules
+          value: "true"
+        - name: depth
+          value: "1"
+        - name: deleteExisting
+          value: "true"
+      taskRef:
+        kind: Task
+        name: git-clone
+      workspaces:
+        - name: output
+          workspace: source
+        - name: basic-auth
+          workspace: GitCredentials
+    - name: build-and-push
+      params:
+        - name: IMAGE
+          value: $(params.image-registry)/$(params.image-name):$(params.tag)
+        - name: DOCKERFILE
+          value: $(params.dockerfile)
+        - name: CONTEXT
+          value: $(params.context)
+        - name: TLSVERIFY
+          value: $(params.tls-verify)
+        - name: SKIP_PUSH
+          value: "false"
+      runAfter:
+        - fetch-source
+      taskRef:
+        kind: Task
+        name: buildah
+      workspaces:
+        - name: source
+          workspace: source
+        - name: dockerconfig
+          workspace: dockerconfig
+  workspaces:
+    - name: source
+    - name: GitCredentials
+    - name: dockerconfig
+    

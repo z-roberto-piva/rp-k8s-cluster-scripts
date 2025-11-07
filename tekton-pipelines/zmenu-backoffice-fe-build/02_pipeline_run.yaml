@@ -1,10 +1,10 @@
 apiVersion: tekton.dev/v1
 kind: PipelineRun
 metadata:
-  name: zmenu-backoffice-fe-build-with-submodules
+  name: zmenu-backoffice-fe-build
   namespace: pipelines-hospitality
   labels:
-    tekton.dev/pipeline: zmenu-backoffice-fe-build-with-submodules
+    tekton.dev/pipeline: zmenu-backoffice-fe-build
 spec:
   params:
     - name: repo-url
@@ -24,9 +24,9 @@ spec:
     - name: tls-verify
       value: 'true'
   pipelineRef:
-    name: zmenu-backoffice-fe-build-with-submodules
+    name: zmenu-backoffice-fe-build
   taskRunTemplate:
-    serviceAccountName: pipeline
+    serviceAccountName: serviceaccount-zmenu-backoffice-fe
   timeouts:
     pipeline: 2h0m0s
   workspaces:
@@ -35,4 +35,4 @@ spec:
         claimName: pvc-hospitality-pipelines
     - name: GitCredentials
       secret:
-        secretName: zmenu-next-devops-creds
+        secretName: secret-zmenu-backoffice-fe-azdo-git

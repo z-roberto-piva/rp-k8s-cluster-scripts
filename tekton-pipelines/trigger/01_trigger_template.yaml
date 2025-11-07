@@ -1,0 +1,33 @@
+apiVersion: triggers.tekton.dev/v1beta1
+kind: TriggerTemplate
+metadata:
+  name: tt-dotnet-build-push
+spec:
+  params:
+    - name: repo_url
+    - name: revision
+    - name: image_repo
+  resourcetemplates:
+    - apiVersion: tekton.dev/v1
+      kind: PipelineRun
+      metadata:
+        generateName: dotnet-build-push-
+      spec:
+        serviceAccountName: tekton-builder
+        pipelineRef:
+          name: dotnet-build-push
+        params:
+          - name: repo_url
+            value: $(tt.params.repo_url)
+          - name: revision
+            value: $(tt.params.revision)
+          - name: image_repo
+            value: $(tt.params.image_repo)
+        workspaces:
+          - name: ws
+            volumeClaimTemplate:
+              spec:
+                accessModes: ["ReadWriteOnce"]
+                resources:
+                  requests:
+                    storage: 5Gi

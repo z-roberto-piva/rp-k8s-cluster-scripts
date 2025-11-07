@@ -1,0 +1,38 @@
+apiVersion: tekton.dev/v1
+kind: PipelineRun
+metadata:
+  name: zmenu-manager-fe-build
+  namespace: pipelines-hospitality
+  labels:
+    tekton.dev/pipeline: zmenu-manager-fe-build
+spec:
+  params:
+    - name: repo-url
+      value: 'https://dev.azure.com/ZMenuNext/Zmenu%20Backoffice/_git/ZMenuManager_Frontend'
+    - name: revision
+      value: Develop
+    - name: image-registry
+      value: container-registry.zucchetti.com/zucchetti_hospitality/zmenu_next
+    - name: image-name
+      value: zmenu_next_manager_frontend
+    - name: tag
+      value: latest
+    - name: dockerfile
+      value: ./Dockerfile
+    - name: context
+      value: .
+    - name: tls-verify
+      value: 'true'
+  pipelineRef:
+    name: zmenu-manager-fe-build
+  taskRunTemplate:
+    serviceAccountName: serviceaccount-zmenu-manager-fe
+  timeouts:
+    pipeline: 2h0m0s
+  workspaces:
+    - name: source
+      persistentVolumeClaim:
+        claimName: pvc-hospitality-pipelines
+    - name: GitCredentials
+      secret:
+        secretName: secret-zmenu-manager-fe-azdo-git

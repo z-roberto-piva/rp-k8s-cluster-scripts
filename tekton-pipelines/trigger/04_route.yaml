@@ -1,0 +1,10 @@
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: el-azdo
+spec:
+  to:
+    kind: Service
+    name: el-azdo
+  port:
+    targetPort: http-listener

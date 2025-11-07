@@ -1,0 +1,51 @@
+apiVersion: triggers.tekton.dev/v1beta1
+kind: EventListener
+metadata:
+  name: el-azdo
+spec:
+  serviceAccountName: tekton-builder
+  triggers:
+
+    # STAGING (Develop)
+    - name: staging-develop
+      bindings:
+        - ref: tb-azdo
+      template:
+        ref: tt-dotnet-build-push
+      interceptors:
+        - ref:
+            name: cel
+          params:
+            - name: filter
+              value: >
+                has(body.resource) && has(body.resource.refUpdates) &&
+                size(body.resource.refUpdates) > 0 &&
+                endsWith(body.resource.refUpdates[0].name, '/Develop')
+            - name: overlays
+              value:
+                - key: tt.params.revision
+                  expression: "'Develop'"
+                - key: tt.params.image_repo
+                  expression: "'quay.io/ORG/IMAGE_NAME-staging'"
+
+    # PRODUCTION (main)
+    - name: production-main
+      bindings:
+        - ref: tb-azdo
+      template:
+        ref: tt-dotnet-build-push
+      interceptors:
+        - ref:
+            name: cel
+          params:
+            - name: filter
+              value: >
+                has(body.resource) && has(body.resource.refUpdates) &&
+                size(body.resource.refUpdates) > 0 &&
+                endsWith(body.resource.refUpdates[0].name, '/main')
+            - name: overlays
+              value:
+                - key: tt.params.revision
+                  expression: "'main'"
+                - key: tt.params.image_repo
+                  expression: "'quay.io/ORG/IMAGE_NAME'"

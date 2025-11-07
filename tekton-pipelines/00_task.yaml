@@ -1,0 +1,147 @@
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"tekton.dev/v1beta1","kind":"Task","metadata":{"annotations":{"operator.tekton.dev/last-applied-hash":"43179067025a2be8cab91c34647a7241839b61acc9b4cd4266ae1b083f398d1c","tekton.dev/pipelines.minVersion":"0.12.1","tekton.dev/tags":"image-build"},"generation":1,"labels":{"app.kubernetes.io/version":"0.1","operator.tekton.dev/operand-name":"openshift-pipelines-addons","operator.tekton.dev/provider-type":"redhat"},"name":"buildah","namespace":"pipelines-hospitality","ownerReferences":[{"apiVersion":"operator.tekton.dev/v1alpha1","blockOwnerDeletion":true,"controller":true,"kind":"TektonInstallerSet","name":"addon-custom-clustertask-fwgk7","uid":"1cca782d-0907-48f4-8cfe-275867171de6"}]},"spec":{"description":"Buildah task builds source into a container image and then pushes it to a container registry.\nBuildah Task builds source into a container image using Project Atomic's Buildah build tool.It uses Buildah's support for building from Dockerfiles, using its buildah bud command.This command executes the directives in the Dockerfile to assemble a container image, then pushes that image to a container registry.","params":[{"description":"Reference of the image buildah will produce.","name":"IMAGE","type":"string"},{"default":"registry.redhat.io/rhel8/buildah@sha256:5c7cd7c9a3d49e8905fc98693f6da605aeafae36bde5622dc78e12f31db3cd59","description":"The location of the buildah builder image.","name":"BUILDER_IMAGE","type":"string"},{"default":"vfs","description":"Set buildah storage driver","name":"STORAGE_DRIVER","type":"string"},{"default":"./Dockerfile","description":"Path to the Dockerfile to build.","name":"DOCKERFILE","type":"string"},{"default":".","description":"Path to the directory to use as context.","name":"CONTEXT","type":"string"},{"default":"true","description":"Verify the TLS on the registry endpoint (for push/pull to a non-TLS registry)","name":"TLSVERIFY","type":"string"},{"default":"oci","description":"The format of the built container, oci or docker","name":"FORMAT","type":"string"},{"default":"","description":"Extra parameters passed for the build command when building images.","name":"BUILD_EXTRA_ARGS","type":"string"},{"default":"","description":"Extra parameters passed for the push command when pushing images.","name":"PUSH_EXTRA_ARGS","type":"string"},{"default":"false","description":"Skip pushing the built image","name":"SKIP_PUSH","type":"string"}],"results":[{"description":"Digest of the image just built.","name":"IMAGE_DIGEST","type":"string"},{"description":"Image repository where the built image would be pushed to","name":"IMAGE_URL","type":"string"}],"steps":[{"image":"$(params.BUILDER_IMAGE)","name":"build-and-push","resources":{},"script":"ENTITLEMENT_VOLUME=\"\"\n\nif [[ \"$(workspaces.rhel-entitlement.bound)\" == \"true\" ]]; then\n  ENTITLEMENT_VOLUME=\"--volume /tmp/entitlement:/etc/pki/entitlement\"\nfi\n\nbuildah bud --storage-driver=$(params.STORAGE_DRIVER) \\\n  $ENTITLEMENT_VOLUME $(params.BUILD_EXTRA_ARGS) \\\n  --format=$(params.FORMAT) --tls-verify=$(params.TLSVERIFY) \\\n  -f $(params.DOCKERFILE) -t $(params.IMAGE) $(params.CONTEXT)\n\n[[ \"$(params.SKIP_PUSH)\" == \"true\" ]] \u0026\u0026 echo \"Push skipped\" \u0026\u0026 exit 0\n\nif [[ \"$(workspaces.dockerconfig.bound)\" == \"true\" ]]; then\n\n  # if config.json exists at workspace root, we use that\n  if test -f \"$(workspaces.dockerconfig.path)/config.json\"; then\n    export DOCKER_CONFIG=\"$(workspaces.dockerconfig.path)\"\n\n  # else we look for .dockerconfigjson at the root\n  elif test -f \"$(workspaces.dockerconfig.path)/.dockerconfigjson\"; then\n    cp \"$(workspaces.dockerconfig.path)/.dockerconfigjson\" \"$HOME/.docker/config.json\"\n    export DOCKER_CONFIG=\"$HOME/.docker\"\n\n  # need to error out if neither files are present\n  else\n    echo \"neither 'config.json' nor '.dockerconfigjson' found at workspace root\"\n    exit 1\n  fi\nfi\n\nbuildah --storage-driver=$(params.STORAGE_DRIVER) push \\\n  $(params.PUSH_EXTRA_ARGS) --tls-verify=$(params.TLSVERIFY) \\\n  --digestfile /tmp/image-digest $(params.IMAGE) \\\n  docker://$(params.IMAGE)\ncat /tmp/image-digest | tee $(results.IMAGE_DIGEST.path)\necho -n \"$(params.IMAGE)\" | tee $(results.IMAGE_URL.path)\n","securityContext":{"capabilities":{"add":["SETFCAP"]}},"volumeMounts":[{"mountPath":"/var/lib/containers","name":"varlibcontainers"}],"workingDir":"$(workspaces.source.path)"}],"volumes":[{"emptyDir":{},"name":"varlibcontainers"}],"workspaces":[{"name":"source"},{"description":"An optional workspace that allows providing a .docker/config.json file for Buildah to access the container registry. The file should be placed at the root of the Workspace with name config.json or .dockerconfigjson.","name":"dockerconfig","optional":true},{"description":"An optional workspace that allows providing the entitlement keys for Buildah to access subscription. The mounted workspace contains entitlement.pem and entitlement-key.pem.","mountPath":"/tmp/entitlement","name":"rhel-entitlement","optional":true}]}}
+    operator.tekton.dev/last-applied-hash: 43179067025a2be8cab91c34647a7241839b61acc9b4cd4266ae1b083f398d1c
+    tekton.dev/pipelines.minVersion: 0.12.1
+    tekton.dev/tags: image-build
+  name: buildah-zmenu-react
+  generation: 6
+  namespace: pipelines-hospitality
+  ownerReferences:
+    - apiVersion: operator.tekton.dev/v1alpha1
+      blockOwnerDeletion: false
+      controller: true
+      kind: TektonInstallerSet
+      name: addon-custom-clustertask-fwgk7
+      uid: 1cca782d-0907-48f4-8cfe-275867171de6
+  labels:
+    app.kubernetes.io/version: '0.1'
+    operator.tekton.dev/operand-name: openshift-pipelines-addons
+    operator.tekton.dev/provider-type: redhat
+spec:
+  description: |-
+    Buildah task builds source into a container image and then pushes it to a container registry.
+    Buildah task build suorce optimized for ZMenu Frontend React app
+  params:
+    - description: Reference of the image buildah will produce.
+      name: IMAGE
+      type: string
+    - default: 'registry.redhat.io/rhel8/buildah@sha256:5c7cd7c9a3d49e8905fc98693f6da605aeafae36bde5622dc78e12f31db3cd59'
+      description: The location of the buildah builder image.
+      name: BUILDER_IMAGE
+      type: string
+    - default: vfs
+      description: Set buildah storage driver
+      name: STORAGE_DRIVER
+      type: string
+    - default: ./Dockerfile
+      description: Path to the Dockerfile to build.
+      name: DOCKERFILE
+      type: string
+    - default: .
+      description: Path to the directory to use as context.
+      name: CONTEXT
+      type: string
+    - default: 'true'
+      description: Verify the TLS on the registry endpoint (for push/pull to a non-TLS registry)
+      name: TLSVERIFY
+      type: string
+    - default: oci
+      description: 'The format of the built container, oci or docker'
+      name: FORMAT
+      type: string
+    - default: ''
+      description: Extra parameters passed for the build command when building images.
+      name: BUILD_EXTRA_ARGS
+      type: string
+    - default: ''
+      description: Extra parameters passed for the push command when pushing images.
+      name: PUSH_EXTRA_ARGS
+      type: string
+    - default: 'false'
+      description: Skip pushing the built image
+      name: SKIP_PUSH
+      type: string
+  results:
+    - description: Digest of the image just built.
+      name: IMAGE_DIGEST
+      type: string
+    - description: Image repository where the built image would be pushed to
+      name: IMAGE_URL
+      type: string
+  steps:
+    - computeResources:
+        limits:
+          cpu: '2'
+          memory: 3Gi
+        requests:
+          cpu: 500m
+          memory: 500Mi
+      image: $(params.BUILDER_IMAGE)
+      name: build-and-push
+      env:
+        - name: NODE_OPTIONS
+          value: "--max-old-space-size=768 --max-semi-space-size=64"
+        - name: GENERATE_SOURCEMAP
+          value: "false"
+      script: |
+        ENTITLEMENT_VOLUME=""
+
+        if [[ "$(workspaces.rhel-entitlement.bound)" == "true" ]]; then
+          ENTITLEMENT_VOLUME="--volume /tmp/entitlement:/etc/pki/entitlement"
+        fi
+
+        buildah bud --storage-driver=$(params.STORAGE_DRIVER) \
+          $ENTITLEMENT_VOLUME $(params.BUILD_EXTRA_ARGS) \
+          --format=$(params.FORMAT) --tls-verify=$(params.TLSVERIFY) \
+          -f $(params.DOCKERFILE) -t $(params.IMAGE) $(params.CONTEXT)
+
+        [[ "$(params.SKIP_PUSH)" == "true" ]] && echo "Push skipped" && exit 0
+
+        if [[ "$(workspaces.dockerconfig.bound)" == "true" ]]; then
+
+          # if config.json exists at workspace root, we use that
+          if test -f "$(workspaces.dockerconfig.path)/config.json"; then
+            export DOCKER_CONFIG="$(workspaces.dockerconfig.path)"
+
+          # else we look for .dockerconfigjson at the root
+          elif test -f "$(workspaces.dockerconfig.path)/.dockerconfigjson"; then
+            cp "$(workspaces.dockerconfig.path)/.dockerconfigjson" "$HOME/.docker/config.json"
+            export DOCKER_CONFIG="$HOME/.docker"
+
+          # need to error out if neither files are present
+          else
+            echo "neither 'config.json' nor '.dockerconfigjson' found at workspace root"
+            exit 1
+          fi
+        fi
+
+        buildah --storage-driver=$(params.STORAGE_DRIVER) push \
+          $(params.PUSH_EXTRA_ARGS) --tls-verify=$(params.TLSVERIFY) \
+          --digestfile /tmp/image-digest $(params.IMAGE) \
+          docker://$(params.IMAGE)
+        cat /tmp/image-digest | tee $(results.IMAGE_DIGEST.path)
+        echo -n "$(params.IMAGE)" | tee $(results.IMAGE_URL.path)
+      securityContext:
+        capabilities:
+          add:
+            - SETFCAP
+      volumeMounts:
+        - mountPath: /var/lib/containers
+          name: varlibcontainers
+      workingDir: $(workspaces.source.path)
+  volumes:
+    - emptyDir: {}
+      name: varlibcontainers
+  workspaces:
+    - name: source
+    - description: An optional workspace that allows providing a .docker/config.json file for Buildah to access the container registry. The file should be placed at the root of the Workspace with name config.json or .dockerconfigjson.
+      name: dockerconfig
+      optional: true
+    - description: An optional workspace that allows providing the entitlement keys for Buildah to access subscription. The mounted workspace contains entitlement.pem and entitlement-key.pem.
+      mountPath: /tmp/entitlement
+      name: rhel-entitlement
+      optional: true
